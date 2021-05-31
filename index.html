@@ -1,0 +1,190 @@
+<!--
+Name:	    PAMELA PIRES DOS SANTOS DO O	
+Date:	    June, 2020
+Purpose:    PROJECT 01 - OOP
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Balsamiq+Sans&display=swap" rel="stylesheet">
+    <title>Astronomy Picture of the Day</title>
+</head>
+<body>
+    <!-- header -->
+    <header>
+        <p><img src="images/logo.png" class="logo"alt=""></p>
+        <h1>Astronomy Picture of the Day</h1>
+    </header>
+    <!-- section -->
+    <section>
+        <p>
+            <br>
+            <label>Select the range date: <br> From: (dd-mm-yyyy) To: (dd-mm-yyyy)</label> 
+            <br>
+            <br>
+            <input type="text" name="dates" value="DD-MM-YYYY to DD-MM-YYYY" />
+        </p>
+        <br>
+        <button onclick="helper();">Get Data</button>
+        <br>
+        <br>
+        <select name="" id="dropDownMenu" onchange="displayObjects();">
+            <option value="-1">Please select...</option>
+        </select>
+        <br>
+        <br>
+        <div id="titleLog"></div>
+        <br>
+        <br>
+        <img id="imageLog">
+        <iframe id="videoLog"></iframe>
+        <br>
+        <br>
+        <div id="descriptionLog"></div>
+        <br><br>
+        <div id="copyrightLog"></div>
+    </section>
+
+<!-- call scripts -->
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+    <script type="text/javascript">
+
+    // Date range picker
+    $(function()
+    { 
+        $('input[name="dates"]').daterangepicker(
+        {
+            opens: 'center', // position 
+            autoApply: true, 
+            dateLimit: {    // date limit - just 1 month
+                'months': 1,
+                'days': -1
+            },
+            maxDate: new Date(), // max Date - today
+            locale: {
+                format: 'DD-MM-YYYY'
+            },
+        }, 
+        function(start, end, label) // grabbing the dates
+        {
+            startDate = start.format('YYYY-MM-DD');
+            endDate = end.format('YYYY-MM-DD');
+        });
+    });
+
+    var startDate = null;
+    var endDate = null;
+
+    // empty array to store astros data
+    var astroData = [];
+
+    // define async ajax call function
+    function getJSONAsync(url){
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            // check if is finish and everything is OK
+            if (request.readyState === 4 && request.status === 200){
+                astroData = JSON.parse(request.responseText);
+                // call the function to populate dropdown with astro titles
+                populateDropDown();
+            }
+        }
+        // open a conection using URL
+        request.open("GET", url);
+        // send the GET request
+        request.send();
+    }
+
+    // function to get data
+    function helper() {
+        // console.log(startDate + ' ' + endDate);
+        var url = "https://api.nasa.gov/planetary/apod?api_key=ce6CyChlkRzhNJtec6uaEdBnylEl8WNB0qd5O8Bn&start_date="+startDate+"&hd=false&end_date="+endDate;
+        // call function 
+        getJSONAsync(url);
+    }
+
+    // function to populate dropdown with title astro
+    function populateDropDown() {
+        try {
+            var dropDownTitle = document.getElementById("dropDownMenu");
+            dropDownTitle.innerHTML = "";
+
+            // create the first option
+            var option = document.createElement("option");
+            option.innerHTML = "Please Select..."
+            option.value = -1;
+            dropDownTitle.appendChild(option);    
+            
+            for (var index = 0; astroData.length; index++) {  
+                tempOption = document.createElement("option");
+                tempOption.innerHTML = astroData[index].title;
+                tempOption.value = index;
+                dropDownTitle.appendChild(tempOption);
+            }
+        }
+        catch {
+            return undefined;
+        }    
+    }
+
+    // variables for id's elements and their style
+    titleOutput = document.getElementById("titleLog");
+    titleOutput.className = 'title';
+
+    imageOutput = document.getElementById("imageLog");
+    imageOutput.className = 'image';
+
+    mediaOutput = document.getElementById("videoLog");
+    mediaOutput.hidden = true; // hidden iframe border
+
+    descriptionOutput = document.getElementById("descriptionLog");
+    descriptionOutput.className = 'description';
+
+    copyrightOutput = document.getElementById("copyrightLog");
+    copyrightOutput.className = 'copyright';
+
+    function displayObjects() {
+        
+        // grabbing the option value
+        var select = document.getElementById("dropDownMenu");
+        var index = select.options[select.selectedIndex].value;
+        //console.log(index);
+
+        // clear the video before next video or image
+        mediaOutput.src = "";
+
+        titleOutput.innerHTML = astroData[index].title;
+
+        // testing if the media type is video or image    
+        if (astroData[index].media_type == "video") {
+            mediaOutput.src = astroData[index].url;
+            mediaOutput.hidden = false;
+            imageOutput.hidden = true;
+        }
+        else {
+            imageOutput.src = astroData[index].hdurl;
+            imageOutput.hidden = false;
+            mediaOutput.hidden = true;
+        }
+
+        descriptionOutput.innerHTML = astroData[index].explanation;
+
+        // testing if copyright does not have author
+        if (typeof astroData[index].copyright == "undefined") {
+            copyrightOutput.innerHTML = "Copyright: Unknown";
+        } 
+        else {
+            copyrightOutput.innerHTML = 'Copyright: ' + astroData[index].copyright;
+        }
+    }
+    </script>
+</body>
+</html>
